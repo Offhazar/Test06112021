@@ -1,8 +1,12 @@
 import Cart from './components/Cart/Cart';
 import Layout from './components/Layout/Layout';
 import Products from './components/Shop/Products';
-import { useSelector } from 'react-redux';
-import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Fragment, useEffect } from 'react';
+import Notofication from './components/UI/Notification';
+import { sendCartData, fetchCartData } from './store/cart-action';
+
+let isInitial = true;
 
 function App() {
   const isShow = useSelector((state) => state.ui.cartIsVisible);
@@ -10,18 +14,52 @@ function App() {
     return state.cart;
   });
 
+  const dispatch = useDispatch();
+
+  const notification = useSelector((state) => state.ui.notification);
+
   useEffect(() => {
-    fetch('https://meals-fd05c-default-rtdb.firebaseio.com/cart.json', {
-      method: 'PUT',
-      body: JSON.stringify(cart),
-    });
-  }, [cart]);
+    dispatch(fetchCartData);
+  }, []);
+
+  useEffect(() => {
+    if (isInitial) {
+      isInitial = false;
+      return;
+    }
+
+    if (cart.changed) {
+      dispatch(sendCartData(cart));
+    }
+
+    // try {
+    //   sendRequest();
+    // } catch (error) {
+    //   dispatch(
+    //     uiActions.showNotification({
+    //       status: 'error',
+    //       title: 'Error!...',
+    //       message: 'Sending cart data failed!' + error,
+    //     })
+    //   );
+    // }
+  }, [cart, dispatch]);
 
   return (
-    <Layout>
-      {isShow && <Cart />}
-      <Products />
-    </Layout>
+    <Fragment>
+      {notification && (
+        <Notofication
+          status={notification.status}
+          title={notification.title}
+          message={notification.message}
+        />
+      )}
+
+      <Layout>
+        {isShow && <Cart />}
+        <Products />
+      </Layout>
+    </Fragment>
   );
 }
 
